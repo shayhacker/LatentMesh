@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LatentMesh • Home</title>
+    <meta name="description" content="LatentMesh: latent-space workflows on top of LangGraph." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body data-page="home">
+    <header class="nav wrap">
+      <div class="nav-inner">
+        <a class="brand" href="index.html"><span class="dot"></span>LatentMesh</a>
+        <nav class="links" aria-label="Main">
+          <a data-page="home" href="index.html">Home</a>
+          <a data-page="docs" href="docs.html">Docs</a>
+          <a data-page="bench" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/latentmesh/latentmesh" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="sec">
+        <div class="hero">
+          <div class="kicker">LangGraph Native • Latent Internal Comm</div>
+          <h1>Production-grade latent multi-agent systems with clean APIs.</h1>
+          <p class="sub">
+            Build on existing LangGraph stacks, keep internal communication in latent space, and serve through LangServe + OpenAI-compatible endpoints.
+          </p>
+          <a class="cta" href="docs.html">Open Docs</a>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Core features</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Compact OOP API</h3>
+            <p><code>LatentLLM</code>, <code>LatentGraph</code>, <code>LatentServe</code>.</p>
+          </article>
+          <article class="card">
+            <h3>LangGraph integration</h3>
+            <p>Uses LangGraph runtime directly when available.</p>
+          </article>
+          <article class="card">
+            <h3>Local + open models</h3>
+            <p>Works with HuggingFace and Ollama backends.</p>
+          </article>
+          <article class="card">
+            <h3>Dual serving</h3>
+            <p>Expose LangServe routes and OpenAI-style routes in one service.</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">LatentMesh • premium docs on GitHub Pages</footer>
+    </main>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>

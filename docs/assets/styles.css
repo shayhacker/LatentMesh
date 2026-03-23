@@ -1,0 +1,236 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #0b0f19;
+  --pri: #4f7cff;
+  --sec: #8aa2ff;
+  --txt: #ffffff;
+  --sub: #a0a8c0;
+  --bd: #1a2033;
+  --glass: rgba(15, 21, 34, 0.78);
+  --glass-2: rgba(18, 25, 41, 0.86);
+  --r-lg: 18px;
+  --r: 14px;
+  --shadow: 0 20px 54px rgba(0, 0, 0, 0.3);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--txt);
+  background: radial-gradient(circle at 12% -20%, rgba(79, 124, 255, 0.14), transparent 45%),
+    radial-gradient(circle at 86% -10%, rgba(138, 162, 255, 0.12), transparent 40%),
+    var(--bg);
+}
+
+.wrap { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; }
+
+.nav {
+  position: sticky;
+  top: 14px;
+  z-index: 30;
+  margin-top: 14px;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(14, 20, 34, 0.84), rgba(10, 15, 26, 0.84));
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+.nav-inner {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1rem;
+}
+.brand {
+  color: var(--txt);
+  text-decoration: none;
+  font-weight: 700;
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--sec), var(--pri));
+  box-shadow: 0 0 20px rgba(79, 124, 255, 0.7);
+}
+.links { margin-left: auto; display: flex; gap: 0.38rem; }
+.links a {
+  color: #d5ddf4;
+  text-decoration: none;
+  font-size: 0.92rem;
+  padding: 0.44rem 0.76rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition: 0.24s ease;
+}
+.links a:hover, .links a.active {
+  color: var(--txt);
+  border-color: var(--bd);
+  background: rgba(25, 35, 58, 0.86);
+}
+
+.sec { padding-top: 88px; }
+.hero {
+  border: 1px solid var(--bd);
+  border-radius: var(--r-lg);
+  background: linear-gradient(155deg, rgba(20, 29, 49, 0.9), rgba(15, 22, 36, 0.84));
+  box-shadow: var(--shadow);
+  padding: clamp(1.5rem, 3.6vw, 2.4rem);
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  top: -170px;
+  right: -150px;
+  background: radial-gradient(circle, rgba(79, 124, 255, 0.26), transparent 70%);
+}
+.kicker {
+  color: var(--sec);
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+  font-size: 0.78rem;
+  margin-bottom: 0.95rem;
+}
+h1 { margin: 0; font-size: clamp(2.05rem, 4.8vw, 3.35rem); line-height: 1.08; letter-spacing: -0.02em; }
+.sub { margin-top: 1rem; color: var(--sub); max-width: 700px; font-size: 1.03rem; }
+.cta {
+  margin-top: 1.35rem;
+  display: inline-flex;
+  text-decoration: none;
+  color: var(--txt);
+  font-weight: 600;
+  border: 1px solid #2d3f71;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(79, 124, 255, 0.34), rgba(79, 124, 255, 0.2));
+  padding: 0.72rem 1.04rem;
+  transition: 0.24s ease;
+}
+.cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(79, 124, 255, 0.24); }
+
+h2 { margin: 0 0 1.1rem; font-size: clamp(1.28rem, 2.2vw, 1.85rem); }
+.cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.card {
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  padding: 1rem;
+  transition: 0.24s ease;
+}
+.card:hover { transform: translateY(-2px); border-color: #253151; }
+.card h3 { margin: 0 0 0.45rem; font-size: 1.02rem; }
+.card p { margin: 0; color: var(--sub); font-size: 0.94rem; line-height: 1.55; }
+
+.docs-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 250px minmax(0, 1fr);
+}
+.side {
+  position: sticky;
+  top: 96px;
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  background: var(--glass);
+  padding: 0.7rem;
+  align-self: start;
+}
+.side h3 { margin: 0.4rem 0 0.7rem; font-size: 0.92rem; color: #c5d1f3; }
+.side a {
+  display: block;
+  color: #bbc8ec;
+  text-decoration: none;
+  padding: 0.46rem 0.62rem;
+  border-radius: 9px;
+  font-size: 0.92rem;
+}
+.side a:hover, .side a.current { background: rgba(28, 41, 68, 0.9); color: #f5f7ff; }
+.doc-main {
+  border: 1px solid var(--bd);
+  border-radius: var(--r-lg);
+  background: var(--glass-2);
+  padding: clamp(1rem, 2vw, 1.6rem);
+}
+.block { margin-bottom: 1.45rem; padding-bottom: 1.45rem; border-bottom: 1px solid #202944; }
+.block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+.code {
+  border: 1px solid #232d47;
+  border-radius: 12px;
+  background: rgba(14, 20, 34, 0.94);
+  overflow: hidden;
+}
+.code-head {
+  padding: 0.52rem 0.72rem;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #232d47;
+  color: #b7c4eb;
+}
+pre { margin: 0; padding: 0.88rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.48; color: #eaf0ff; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.charts {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.chart {
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  background: var(--glass);
+  padding: 1rem;
+}
+.chart h3 { margin: 0 0 0.8rem; font-size: 1.04rem; }
+.row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.52rem;
+  font-size: 0.84rem;
+}
+.row:last-child { margin-bottom: 0; }
+.lb { color: #c9d4f8; }
+.tr {
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid #1f2740;
+  background: #131a2b;
+  overflow: hidden;
+}
+.bar {
+  display: block;
+  height: 100%;
+  width: calc(var(--v) * 1%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pri), var(--sec));
+}
+.vl { color: #eef3ff; font-weight: 600; }
+
+.footer {
+  margin-top: 88px;
+  border-top: 1px solid var(--bd);
+  padding: 1.35rem 0 2.2rem;
+  color: var(--sub);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 920px) {
+  .docs-layout { grid-template-columns: 1fr; }
+  .side { position: static; }
+}
+@media (max-width: 760px) {
+  .wrap { width: min(1100px, calc(100% - 1rem)); }
+  .nav { top: 8px; }
+  .links a { padding: 0.38rem 0.58rem; font-size: 0.85rem; }
+  .row { grid-template-columns: 92px 1fr auto; }
+}
