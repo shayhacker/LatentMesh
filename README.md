@@ -19,7 +19,7 @@
     Multi-agent Latent Space Communication for LLMs
     <br />
     <br />
-    <a href="https://github.com/shayhacker/LatentMesh/tree/main/docs"><strong>Explore the docs »</strong></a>
+    <a href="https://latentmesh.vercel.app" target="_blank"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/shayhacker/LatentMesh/issues/new?labels=bug">Report Bug</a>
