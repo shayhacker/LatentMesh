@@ -1,14 +1,15 @@
 # LatentMesh
 
-**Multi-agent KV-cache communication for LLMs.**
+## **Multi-agent Latent Space Communication**
 
-LatentMesh wires multiple LLM agents together in a [LangGraph](https://github.com/langchain-ai/langgraph) pipeline. When Agent A generates text, the full KV cache is stored in a `GlobalPrefixCache`. When Agent B runs next, LatentMesh finds the longest matching prefix and injects the cached KV state — so Agent B never re-encodes what Agent A already processed.
+LatentMesh wires multiple LLM agents together in a [LangGraph](https://github.com/langchain-ai/langgraph) pipeline. When Agent B is run, it never has to re-read Agent A's work.
 
 ## Installation
 
 ```bash
 pip install latentmesh
 ```
+> Not yet published!
 
 Or from source:
 
@@ -18,9 +19,9 @@ cd LatentMesh
 pip install -e .
 ```
 
-**Core requirements:** `torch`, `transformers`, `langgraph`, `langchain-core`, `pygtrie`
-
-**Optional:** `pip install latentmesh[disk]` for persistent disk-backed caching, `pip install latentmesh[server]` for the FastAPI server.
+**Optional:**
+- For persistent disk-backed caching: `pip install latentmesh[disk]`
+- For a FastAPI server: `pip install latentmesh[server]` 
 
 ## Quick Start
 
@@ -65,42 +66,6 @@ print(result["latent"].text)
 print(f"Total tokens: {result['tokens_so_far']}")
 ```
 
-## API Reference
-
-| Module | Contents |
-|---|---|
-| `latentmesh.core` | `LatentLLM`, `AgentOutput`, `extract_kv` |
-| `latentmesh.graph` | `LatentState`, `latent_reducer` |
-| `latentmesh.primitives` | `AgentPrimitive`, `PlanPrimitive`, `ReasonPrimitive`, `ReviewPrimitive`, `VotingPrimitive` |
-| `latentmesh.persistent_cache` | `GlobalPrefixCache`, `MemoryKVStore`, `DiskKVStore` |
-
-### `LatentLLM(model_name, device="cuda", dtype="auto", global_cache=None, debug=False)`
-
-Wraps any HuggingFace `AutoModelForCausalLM`.
-
-- **`global_cache`**: A `GlobalPrefixCache` for automatic KV-cache reuse.
-- **`debug`**: When `True`, logs cache hit/miss details and token counts.
-- **`generate(messages, max_new_tokens, ...)`** → `AgentOutput`
-
-### Primitives
-
-All primitives are callable LangGraph nodes:
-
-| Primitive | Default Trigger | Purpose |
-|---|---|---|
-| `PlanPrimitive(llm)` | `"Break the problem into clear steps..."` | Structural decomposition |
-| `ReasonPrimitive(llm)` | `"Now reason through each step..."` | Core computation |
-| `ReviewPrimitive(llm)` | `"Review the reasoning above..."` | Verification & refinement |
-| `VotingPrimitive(name, candidates)` | — | Selects candidate with highest generation log-probability |
-
-### Graph State
-
-`LatentState` is a `TypedDict` with:
-
-- `messages` — list of message dicts (accumulated via list concatenation)
-- `latent` — `AgentOutput` with generated `text`, token counts, and diagnostics
-- `tokens_so_far` — running total of generated tokens
-
 ## Examples
 
 | Example | Description |
@@ -109,21 +74,6 @@ All primitives are callable LangGraph nodes:
 | [`complex.py`](examples/complex.py) | Multi-path voting with `VotingPrimitive` |
 | [`hierarchical.py`](examples/hierarchical.py) | Supervisor routing based on generated text |
 
-## Server
-
-Start an OpenAI-compatible API server:
-
-```bash
-pip install latentmesh[server]
-python -m latentmesh.server
-```
-
-## References
-
-- [LatentMAS: Latent Collaboration in Multi-Agent Systems](https://arxiv.org/abs/2511.20639)
-- [Latent Space Communication via K-V Cache Alignment](https://arxiv.org/abs/2601.06123)
-- [Agent Primitives: Reusable Latent Building Blocks for MAS](https://arxiv.org/abs/2602.03695)
-
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT [LICENSE](LICENSE).
