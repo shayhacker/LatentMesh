@@ -10,7 +10,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 
 authors = [
-    { name = "Yash Ranjith", email = "yranjith@stanford.edu" }
+    { name = "Yash Ranjith", email = "yranjith@stanford.edu" },
+    { name = "Hiroki Kimiwada", email = "kimiwada@stanford.edu" },
+    { name = "William Peng", email = "wgpeng@stanford.edu" },
+    { name = "Atharva Rao", email = "arao2007@stanford.edu" }
 ]
 
 license = {text = "MIT"}
