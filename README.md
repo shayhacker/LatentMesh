@@ -1,94 +1,129 @@
 # LatentMesh
 
-LangGraph-first latent agent framework.
+**Multi-agent KV-cache communication for LLMs.**
 
-You build a standard LangGraph workflow, but every internal stage exchanges only latent vectors. Text is only used at the ingress (user input) and egress (final answer).
+LatentMesh wires multiple LLM agents together in a [LangGraph](https://github.com/langchain-ai/langgraph) pipeline. When Agent A generates text, the full KV cache is stored in a `GlobalPrefixCache`. When Agent B runs next, LatentMesh finds the longest matching prefix and injects the cached KV state — so Agent B never re-encodes what Agent A already processed.
 
-## Core API (OOP)
-
-- `LatentLLM("hf/model")`
-- `LatentGraph(...)`
-- `LatentStage` + `LatentTransform`
-- `LatentWorkflow`
-- `LatentServe`
-
-## Install
+## Installation
 
 ```bash
-python3 -m pip install -e .
+pip install latentmesh
 ```
 
-Optional extras:
+Or from source:
 
 ```bash
-python3 -m pip install -e '.[transformers]'
-python3 -m pip install -e '.[ollama]'
-python3 -m pip install -e '.[langgraph]'
-python3 -m pip install -e '.[serve]'
+git clone https://github.com/shayhacker/LatentMesh.git
+cd LatentMesh
+pip install -e .
 ```
 
-## Build a Latent LangGraph
+**Core requirements:** `torch`, `transformers`, `langgraph`, `langchain-core`, `pygtrie`
+
+**Optional:** `pip install latentmesh[disk]` for persistent disk-backed caching, `pip install latentmesh[server]` for the FastAPI server.
+
+## Quick Start
 
 ```python
-import numpy as np
-from latentmesh import LatentLLM, LatentGraph
+from langgraph.graph import StateGraph, START, END
+from latentmesh import LatentLLM, LatentState
+from latentmesh.primitives import PlanPrimitive, ReasonPrimitive, ReviewPrimitive
+from latentmesh.persistent_cache import MemoryKVStore, GlobalPrefixCache
 
-llm = LatentLLM("mock://dev", backend="mock")
-# production example:
-# llm = LatentLLM("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+# 1. Set up the cache
+store = MemoryKVStore()
+cache = GlobalPrefixCache(store)
 
-workflow = (
-    LatentGraph(llm=llm, name="incident-response", retrieval_k=2)
-    .add_stage("planner", transform=lambda x: np.tanh(x))
-    .add_stage("critic", transform=lambda x: np.maximum(0.0, x))
-    .add_stage("writer")
-    .connect("planner", "critic")
-    .connect("critic", "writer")
-    .add_example("How to rollback deploy?", "Rollback to last healthy build and run smoke tests.")
-    .compile(entry_stage="planner", exit_stage="writer")
-)
+# 2. Load any HuggingFace causal LM
+llm = LatentLLM("Qwen/Qwen3-0.6B", device="cuda", global_cache=cache)
 
-print(workflow.invoke("Production deploy failed after migration timeout."))
+# 3. Create primitives (each is a LangGraph node)
+planner  = PlanPrimitive(llm)
+reasoner = ReasonPrimitive(llm)
+reviewer = ReviewPrimitive(llm)
+
+# 4. Build a LangGraph
+builder = StateGraph(LatentState)
+builder.add_node("planner", planner)
+builder.add_node("reasoner", reasoner)
+builder.add_node("reviewer", reviewer)
+
+builder.add_edge(START, "planner")
+builder.add_edge("planner", "reasoner")
+builder.add_edge("reasoner", "reviewer")
+builder.add_edge("reviewer", END)
+
+graph = builder.compile()
+
+# 5. Run
+result = graph.invoke({
+    "messages": [{"role": "user", "content": "What is the cosine of 45 degrees?"}],
+    "tokens_so_far": 0,
+})
+
+print(result["latent"].text)
+print(f"Total tokens: {result['tokens_so_far']}")
 ```
 
-## Serve with LangServe or OpenAI-compatible API
+## API Reference
 
-```python
-from latentmesh import LatentServe
+| Module | Contents |
+|---|---|
+| `latentmesh.core` | `LatentLLM`, `AgentOutput`, `extract_kv` |
+| `latentmesh.graph` | `LatentState`, `latent_reducer` |
+| `latentmesh.primitives` | `AgentPrimitive`, `PlanPrimitive`, `ReasonPrimitive`, `ReviewPrimitive`, `VotingPrimitive` |
+| `latentmesh.persistent_cache` | `GlobalPrefixCache`, `MemoryKVStore`, `DiskKVStore` |
 
-gateway = LatentServe(workflow, model_name="latent-langgraph")
+### `LatentLLM(model_name, device="cuda", dtype="auto", global_cache=None, debug=False)`
 
-# One app with both:
-# - LangServe routes under /latent
-# - OpenAI endpoints under /v1/*
-gateway.serve(mode="unified", host="0.0.0.0", port=8000, langserve_path="/latent")
-```
+Wraps any HuggingFace `AutoModelForCausalLM`.
 
-## Existing ecosystem integration
+- **`global_cache`**: A `GlobalPrefixCache` for automatic KV-cache reuse.
+- **`debug`**: When `True`, logs cache hit/miss details and token counts.
+- **`generate(messages, max_new_tokens, ...)`** → `AgentOutput`
 
-- **LangGraph runtime**: used as the workflow execution backend when installed.
-- **LangServe**: exposes `invoke`/`batch` style API for direct integration.
-- **OpenAI-compatible endpoint**: `/v1/chat/completions` and `/v1/models` for tooling compatibility.
+### Primitives
+
+All primitives are callable LangGraph nodes:
+
+| Primitive | Default Trigger | Purpose |
+|---|---|---|
+| `PlanPrimitive(llm)` | `"Break the problem into clear steps..."` | Structural decomposition |
+| `ReasonPrimitive(llm)` | `"Now reason through each step..."` | Core computation |
+| `ReviewPrimitive(llm)` | `"Review the reasoning above..."` | Verification & refinement |
+| `VotingPrimitive(name, candidates)` | — | Selects candidate with highest generation log-probability |
+
+### Graph State
+
+`LatentState` is a `TypedDict` with:
+
+- `messages` — list of message dicts (accumulated via list concatenation)
+- `latent` — `AgentOutput` with generated `text`, token counts, and diagnostics
+- `tokens_so_far` — running total of generated tokens
 
 ## Examples
 
-- `/Users/shayhacker/Desktop/personal/DeepSync/examples/README.md`
-- One-GPU HF: `/Users/shayhacker/Desktop/personal/DeepSync/examples/hf`
-- Ollama local: `/Users/shayhacker/Desktop/personal/DeepSync/examples/ollama`
-- Serving: `/Users/shayhacker/Desktop/personal/DeepSync/examples/serving`
-- Integrations (LangGraph, LangChain, OpenAI SDK, Claude MCP): `/Users/shayhacker/Desktop/personal/DeepSync/examples/integrations`
-- Ops smoke scripts: `/Users/shayhacker/Desktop/personal/DeepSync/examples/ops`
+| Example | Description |
+|---|---|
+| [`sequential.py`](examples/sequential.py) | Plan → Reason → Review pipeline |
+| [`complex.py`](examples/complex.py) | Multi-path voting with `VotingPrimitive` |
+| [`hierarchical.py`](examples/hierarchical.py) | Supervisor routing based on generated text |
 
-## Docs Website (GitHub Pages)
+## Server
 
-- `docs/index.html` (Home)
-- `docs/docs.html` (Docs)
-- `docs/benchmarks.html` (Benchmarks)
-
-## Tests
+Start an OpenAI-compatible API server:
 
 ```bash
-python3 -m pytest
+pip install latentmesh[server]
+python -m latentmesh.server
 ```
 
-All tests are model-free and do not load LLMs.
+## References
+
+- [LatentMAS: Latent Collaboration in Multi-Agent Systems](https://arxiv.org/abs/2511.20639)
+- [Latent Space Communication via K-V Cache Alignment](https://arxiv.org/abs/2601.06123)
+- [Agent Primitives: Reusable Latent Building Blocks for MAS](https://arxiv.org/abs/2602.03695)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

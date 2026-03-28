@@ -1,45 +1,40 @@
-"""LatentMesh: LangGraph-first latent-space agent workflows."""
+"""
+LatentMesh — LangGraph-based multi-agent KV-cache communication protocol.
 
-from .model import (
+Agents share a ``GlobalPrefixCache`` so that downstream agents skip
+re-encoding text that upstream agents already processed.
+"""
+
+from latentmesh.core import (
+    AgentOutput,
     LatentLLM,
-    LatentModelBackend,
-    MockLatentBackend,
-    OllamaLatentBackend,
-    TransformersLatentBackend,
+    extract_kv,
 )
-from .serve import LatentServe
-from .workflow import (
-    CallableTransform,
-    IdentityTransform,
-    LatentExampleMemory,
-    LatentGraph,
-    LatentRunTrace,
-    LatentStage,
-    LatentStepTrace,
-    LatentTransform,
-    LatentWorkflow,
-    LatentBuilder,
-    LatentRunner,
-    LinearTransform,
+
+from latentmesh.graph import (
+    LatentState,
+    latent_reducer,
 )
+
+from latentmesh.primitives import (
+    AgentPrimitive,
+    PlanPrimitive,
+    ReasonPrimitive,
+    ReviewPrimitive,
+    VotingPrimitive,
+)
+
+__version__ = "0.5.0"
 
 __all__ = [
-    "LatentModelBackend",
-    "MockLatentBackend",
-    "TransformersLatentBackend",
-    "OllamaLatentBackend",
+    "AgentOutput",
     "LatentLLM",
-    "LatentTransform",
-    "IdentityTransform",
-    "CallableTransform",
-    "LinearTransform",
-    "LatentStage",
-    "LatentStepTrace",
-    "LatentRunTrace",
-    "LatentExampleMemory",
-    "LatentRunner",
-    "LatentBuilder",
-    "LatentGraph",
-    "LatentWorkflow",
-    "LatentServe",
+    "extract_kv",
+    "LatentState",
+    "latent_reducer",
+    "AgentPrimitive",
+    "PlanPrimitive",
+    "ReasonPrimitive",
+    "ReviewPrimitive",
+    "VotingPrimitive",
 ]

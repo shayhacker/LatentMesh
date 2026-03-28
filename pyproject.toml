@@ -1,66 +1,65 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "latentmesh"
-version = "0.1.0"
-description = "LangGraph-first latent-space workflow framework"
+version = "0.5.0"
+description = "LangGraph-based multi-agent KV-cache communication protocol for LLMs"
 readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+
 authors = [
-  { name = "LatentMesh Authors" }
+    { name = "Yash Ranjith", email = "yranjith@stanford.edu" }
 ]
+
+license = {text = "MIT"}
+
 classifiers = [
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
 dependencies = [
-  "numpy>=1.24,<3",
+    "torch",
+    "transformers",
+    "accelerate",
+    "langgraph",
+    "langchain-core",
+    "pygtrie",
+    "pydantic",
 ]
 
 [project.optional-dependencies]
+server = [
+    "fastapi",
+    "uvicorn[standard]",
+]
+disk = [
+    "diskcache",
+]
 dev = [
-  "pytest>=8.0",
-  "pytest-cov>=5.0",
+    "pytest",
+    "datasets",
+    "matplotlib",
+    "scipy",
 ]
-transformers = [
-  "transformers>=4.40",
-  "torch>=2.2",
+all = [
+    "latentmesh[server,disk,dev]",
 ]
-ollama = [
-  "ollama>=0.3.0",
-]
-langgraph = [
-  "langgraph>=0.2.0",
-  "langchain-core>=0.2.0",
-]
-serve = [
-  "fastapi>=0.111",
-  "uvicorn>=0.30",
-  "langserve>=0.3.0",
-]
-
-[project.urls]
-Homepage = "https://github.com/latentmesh/latentmesh"
-Documentation = "https://github.com/latentmesh/latentmesh/tree/main/docs"
-Repository = "https://github.com/latentmesh/latentmesh"
 
 [tool.setuptools]
-include-package-data = true
+packages = ["latentmesh"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["latentmesh*"]
+[tool.uv]
+package = true
 
 [tool.pytest.ini_options]
-addopts = "-q --maxfail=1"
 testpaths = ["tests"]

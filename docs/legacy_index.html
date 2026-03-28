@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LatentMesh — Latent-Space Multi-Agent Communication</title>
+  <meta name="description" content="LatentMesh enables latent-space multi-agent communication for LLMs. Agents communicate through KV caches and continuous hidden states — no text is ever passed between agents.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="sweep-overlay"></div>
+
+<!-- ═══ Header ═══════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="header-brand" onclick="switchTab('home')">
+    <span class="logo-icon">D</span>
+    LatentMesh
+    <span class="header-version">v0.5.0</span>
+  </div>
+
+  <div class="header-tabs">
+    <button class="header-tab active" data-tab="home">Home</button>
+    <button class="header-tab" data-tab="docs">Documentation</button>
+  </div>
+
+  <div class="header-links">
+    <a href="https://github.com/shayhacker/LatentMesh" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 9.2A6.5 6.5 0 016.8 2 6 6 0 1014 9.2z"/></svg>
+      <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+    </button>
+  </div>
+
+  <button class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+  </button>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════
+     HOME TAB
+     ═══════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-home" data-tab="home">
+
+  <!-- Ambient aurora background -->
+  <div class="home-aurora" id="home-aurora">
+    <div class="aurora-blob aurora-blob-1"></div>
+    <div class="aurora-blob aurora-blob-2"></div>
+    <div class="aurora-blob aurora-blob-3"></div>
+    <div class="aurora-sweep"></div>
+  </div>
+
+  <!-- Hero -->
+  <section class="home-hero">
+    <h1>LatentMesh</h1>
+    <p class="tagline">
+      Latent-space multi-agent communication for LLMs
+    </p>
+    <div class="home-cta">
+      <button class="btn btn-primary" onclick="switchTab('docs')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>
+        Read the Docs
+      </button>
+      <a class="btn btn-secondary" href="https://github.com/shayhacker/LatentMesh" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </section>
+
+  <!-- Install + Code stacked -->
+  <div class="home-code-stack">
+    <div class="code-block">
+      <div class="code-block-header">
+        <span>bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><code>pip install uv
+uv pip install latentmesh</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span>python</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><code><span class="kw">from</span> latentmesh <span class="kw">import</span> LatentLLM, PlanPrimitive, ReasonPrimitive
+<span class="kw">from</span> latentmesh <span class="kw">import</span> LatentGraphState, decode_state
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+
+llm = LatentLLM(<span class="str">"Qwen/Qwen3-0.6B"</span>, device=<span class="str">"cuda"</span>)
+builder = StateGraph(LatentGraphState)
+builder.add_node(<span class="str">"plan"</span>,   PlanPrimitive(llm))
+builder.add_node(<span class="str">"reason"</span>, ReasonPrimitive(llm))
+builder.add_edge(START, <span class="str">"plan"</span>)
+builder.add_edge(<span class="str">"plan"</span>, <span class="str">"reason"</span>)
+builder.add_edge(<span class="str">"reason"</span>, END)
+
+graph = builder.compile()
+result = graph.invoke({<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Prove √2 is irrational"</span>}]})
+print(decode_state(llm, result))</code></pre>
+    </div>
+  </div>
+
+  <!-- Team -->
+  <section class="team-section">
+    <div class="team-grid">
+      <div class="team-member">
+        <div class="team-avatar">YR</div>
+        <span class="team-name">Yash Ranjith</span>
+        <span class="team-role">Lead Engineer</span>
+      </div>
+      <div class="team-member">
+        <div class="team-avatar">AR</div>
+        <span class="team-name">Aiden Reeves</span>
+        <span class="team-role">ML Research</span>
+      </div>
+      <div class="team-member">
+        <div class="team-avatar">MK</div>
+        <span class="team-name">Maya Kim</span>
+        <span class="team-role">Systems Architecture</span>
+      </div>
+      <div class="team-member">
+        <div class="team-avatar">JP</div>
+        <span class="team-name">Jordan Park</span>
+        <span class="team-role">Benchmarks & Eval</span>
+      </div>
+      <div class="team-member">
+        <div class="team-avatar">LC</div>
+        <span class="team-name">Lena Chen</span>
+        <span class="team-role">Infrastructure</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="home-footer">
+    <p>MIT License · <a href="https://arxiv.org/abs/2511.20639">LatentMAS Paper</a> · <a href="https://github.com/shayhacker/LatentMesh">GitHub</a></p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     DOCS TAB
+     ═══════════════════════════════════════════════════════ -->
+<div class="tab-panel docs-panel" id="tab-docs" data-tab="docs">
+
+  <!-- Left Sidebar Navigation -->
+  <nav class="sidebar" id="sidebar">
+    <div class="nav-section">
+      <div class="nav-section-title">Getting Started</div>
+      <button class="nav-link active" data-section="introduction">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Introduction
+      </button>
+      <button class="nav-link" data-section="installation">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10"/></svg>
+        Installation
+      </button>
+      <button class="nav-link" data-section="quick-start">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 3l7 5-7 5V3z"/></svg>
+        Quick Start
+      </button>
+    </div>
+
+
+
+    <div class="nav-section">
+      <div class="nav-section-title">API Reference</div>
+      <button class="nav-link" data-section="latentllm">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 10h4"/></svg>
+        LatentLLM
+      </button>
+      <button class="nav-link" data-section="decode-state">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+        decode_state
+      </button>
+      <button class="nav-link" data-section="primitives">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="8" r="2.5"/><circle cx="11" cy="5" r="2.5"/><circle cx="11" cy="11" r="2.5"/></svg>
+        Primitives
+      </button>
+      <button class="nav-link" data-section="graph-state">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5"/></svg>
+        Graph State
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Examples</div>
+      <button class="nav-link" data-section="sequential">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h9"/></svg>
+        Sequential Pipeline
+      </button>
+      <button class="nav-link" data-section="voting">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1z"/></svg>
+        Consensus Voting
+      </button>
+      <button class="nav-link" data-section="hierarchical">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="3" r="2"/><circle cx="4" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><path d="M8 5v2M6 9l-1 1M10 9l1 1"/></svg>
+        Hierarchical Routing
+      </button>
+      <button class="nav-link" data-section="deployment">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+        FastAPI Deployment
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Performance</div>
+      <button class="nav-link" data-section="benchmarks">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="9" width="3" height="5"/><rect x="6.5" y="5" width="3" height="9"/><rect x="12" y="2" width="3" height="12"/></svg>
+        Benchmarks
+      </button>
+      <button class="nav-link" data-section="references">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>
+        References
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="docs-content">
+
+    <!-- Introduction -->
+    <section class="doc-section visible" id="introduction">
+      <h1>LatentMesh</h1>
+      <p class="section-subtitle">
+        Latent-space multi-agent communication for LLMs. Wire
+        multiple agents together so they communicate entirely through <strong>KV caches and
+        continuous hidden states</strong> — no text is ever passed between agents.
+      </p>
+    </section>
+
+    <!-- Installation -->
+    <section class="doc-section" id="installation">
+      <h2>Installation</h2>
+      <p>Install via uv:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code>pip install uv
+uv pip install latentmesh</code></pre>
+      </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section class="doc-section" id="quick-start">
+      <h2>Quick Start</h2>
+      <p>Build a three-agent pipeline (Plan → Reason → Review) in under 20 lines:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>python</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="kw">from</span> latentmesh <span class="kw">import</span> LatentLLM, PlanPrimitive, ReasonPrimitive, ReviewPrimitive
+<span class="kw">from</span> latentmesh <span class="kw">import</span> LatentGraphState, decode_state
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+
+llm = LatentLLM(<span class="str">"Qwen/Qwen3-0.6B"</span>, device=<span class="str">"cuda"</span>)
+
+builder = StateGraph(LatentGraphState)
+builder.add_node(<span class="str">"planner"</span>,  PlanPrimitive(llm))
+builder.add_node(<span class="str">"reasoner"</span>, ReasonPrimitive(llm))
+builder.add_node(<span class="str">"reviewer"</span>, ReviewPrimitive(llm))
+
+builder.add_edge(START, <span class="str">"planner"</span>)
+builder.add_edge(<span class="str">"planner"</span>, <span class="str">"reasoner"</span>)
+builder.add_edge(<span class="str">"reasoner"</span>, <span class="str">"reviewer"</span>)
+builder.add_edge(<span class="str">"reviewer"</span>, END)
+
+graph = builder.compile()
+result = graph.invoke({<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Prove that √2 is irrational."</span>}]})
+answer = decode_state(llm, result, [{<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Final answer: "</span>}])</code></pre>
+      </div>
+    </section>
+
+
+
+    <!-- LatentLLM -->
+    <section class="doc-section" id="latentllm">
+      <h2>LatentLLM</h2>
+      <p>Core model wrapper. Loads any HuggingFace causal LM and computes W<sub>a</sub> at init.</p>
+      <div class="api-signature">
+        LatentLLM(model_name, device=<span class="str">"cuda"</span>, dtype=<span class="str">"auto"</span>)
+      </div>
+      <dl class="param-list">
+        <dt>model_name</dt><dd>HuggingFace model identifier (e.g., <code>"Qwen/Qwen3-0.6B"</code>)</dd>
+        <dt>device</dt><dd>Target device (<code>"cuda"</code>, <code>"cpu"</code>)</dd>
+        <dt>dtype</dt><dd>Torch dtype. <code>"auto"</code> uses native precision.</dd>
+      </dl>
+
+      <h3>generate_latent()</h3>
+      <div class="api-signature">
+        generate_latent(messages=<span class="kw">None</span>, past_latent_state=<span class="kw">None</span>, num_thinking_steps=<span class="num">40</span>) → LatentState
+      </div>
+      <p>Runs <code>num_thinking_steps</code> of latent auto-regressive reasoning.</p>
+      <dl class="param-list">
+        <dt>messages</dt><dd>Chat messages to encode as initial context. Each dict has <code>"role"</code> and <code>"content"</code>.</dd>
+        <dt>past_latent_state</dt><dd>Continue from a prior agent's latent state. If provided, only trigger text is encoded.</dd>
+        <dt>num_thinking_steps</dt><dd>Number of recurrence steps in hidden-state space (default: 40).</dd>
+      </dl>
+      <p><strong>Returns:</strong> <code>LatentState</code> with <code>.kv_cache</code> and <code>.hidden_states</code>.</p>
+
+      <h3>LatentState</h3>
+      <table class="doc-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>kv_cache</code></td><td><code>Any</code></td><td>Transformer KV cache (tuple of key/value per layer)</td></tr>
+          <tr><td><code>hidden_states</code></td><td><code>Tensor</code></td><td>Hidden states from all recurrence steps [1, m, d_model]</td></tr>
+          <tr><td><code>debug_text</code></td><td><code>str</code></td><td>Human-readable label for logging</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- decode_state -->
+    <section class="doc-section" id="decode-state">
+      <h2>decode_state</h2>
+      <p>Decodes text from a <code>LatentState</code> or graph state dict. The single point where continuous representations become tokens.</p>
+      <div class="api-signature">
+        decode_state(llm, state, prompt, max_new_tokens=<span class="num">128</span>, temperature=<span class="num">0.6</span>, top_k=<span class="num">30000</span>, top_p=<span class="num">0.95</span>) → <span class="cls">str</span>
+      </div>
+      <dl class="param-list">
+        <dt>llm</dt><dd>The <code>LatentLLM</code> instance to use for decoding</dd>
+        <dt>state</dt><dd>A <code>LatentState</code> or a graph state dict with a <code>"latent"</code> key</dd>
+        <dt>prompt</dt><dd>Messages to prepend before generation (e.g., <code>[{"role": "assistant", "content": "Final answer: "}]</code>)</dd>
+        <dt>temperature</dt><dd>Sampling temperature. Set to <code>0</code> for greedy decoding.</dd>
+        <dt>top_k</dt><dd>Top-K filtering threshold</dd>
+        <dt>top_p</dt><dd>Nucleus sampling threshold</dd>
+      </dl>
+    </section>
+
+    <!-- Primitives -->
+    <section class="doc-section" id="primitives">
+      <h2>Primitives</h2>
+      <p>All primitives are callable LangGraph nodes (<code>state → {"latent": LatentState}</code>). Each uses a <strong>trigger text</strong> to steer the latent manifold before performing token-less recurrence.</p>
+
+      <h3>AgentPrimitive (Base)</h3>
+      <div class="api-signature">AgentPrimitive(name, llm, trigger_text=<span class="str">""</span>, num_thinking_steps=<span class="num">40</span>)</div>
+      <p>Base class. Appends trigger text as an assistant message to shift the model's internal manifold, then runs <code>generate_latent</code>.</p>
+
+      <h3>Built-in Primitives</h3>
+      <table class="doc-table">
+        <thead><tr><th>Primitive</th><th>Trigger Text</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>PlanPrimitive</code></td><td><code>"Plan but don't execute: "</code></td><td>Structural decomposition</td></tr>
+          <tr><td><code>ReasonPrimitive</code></td><td><code>"Executing reasoning chain: "</code></td><td>Core computation</td></tr>
+          <tr><td><code>ReviewPrimitive</code></td><td><code>"Verify and check for errors: "</code></td><td>Verification &amp; error checking</td></tr>
+        </tbody>
+      </table>
+
+      <h3>VotingPrimitive</h3>
+      <div class="api-signature">VotingPrimitive(name, candidates: List[AgentPrimitive])</div>
+      <p>Runs multiple candidates on deep-copied states. Selects winner by <strong>highest mean hidden-state L2 norm</strong> — higher norm = more settled reasoning = more confident trajectory.</p>
+    </section>
+
+    <!-- Graph State -->
+    <section class="doc-section" id="graph-state">
+      <h2>Graph State</h2>
+      <div class="api-signature">
+        <span class="kw">class</span> <span class="cls">LatentGraphState</span>(TypedDict):<br>
+        &nbsp;&nbsp;messages: Annotated[List[dict], add]<br>
+        &nbsp;&nbsp;latent: Annotated[Optional[LatentState], latent_state_reducer]
+      </div>
+      <p>Core state for LatentMesh LangGraph workflows. Compatible with <code>StateGraph</code>.</p>
+
+      <h3>latent_state_reducer</h3>
+      <p>Returns <code>right</code> if it exists, otherwise <code>left</code>. Since each agent's KV cache already contains all prior context, the latest state is always the most complete. Correct for sequential topologies.</p>
+
+      <h3>merge_kv_caches(existing, incoming)</h3>
+      <p>Fan-in utility. Concatenates KV caches along the sequence dimension (dim=2) for parallel worker results.</p>
+    </section>
+
+    <hr class="section-divider">
+
+    <!-- Sequential Pipeline -->
+    <section class="doc-section" id="sequential">
+      <h2>Example: Sequential Pipeline</h2>
+      <p>Linear pipeline: Plan → Reason → Review. The most common topology for structured reasoning.</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>python &middot; examples/sequential.py</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="kw">from</span> latentmesh <span class="kw">import</span> (
+    LatentLLM, PlanPrimitive, ReasonPrimitive,
+    ReviewPrimitive, LatentGraphState, decode_state,
+)
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+
+llm = LatentLLM(<span class="str">"Qwen/Qwen3-0.6B"</span>, device=<span class="str">"cuda"</span>)
+
+builder = StateGraph(LatentGraphState)
+builder.add_node(<span class="str">"planner"</span>,  PlanPrimitive(llm))
+builder.add_node(<span class="str">"reasoner"</span>, ReasonPrimitive(llm))
+builder.add_node(<span class="str">"reviewer"</span>, ReviewPrimitive(llm))
+builder.add_edge(START, <span class="str">"planner"</span>)
+builder.add_edge(<span class="str">"planner"</span>,  <span class="str">"reasoner"</span>)
+builder.add_edge(<span class="str">"reasoner"</span>, <span class="str">"reviewer"</span>)
+builder.add_edge(<span class="str">"reviewer"</span>, END)
+
+graph = builder.compile()
+result = graph.invoke({
+    <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Prove that √2 is irrational."</span>}]
+})
+
+answer = decode_state(llm, result, [{<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Final answer: "</span>}])
+print(answer)</code></pre>
+      </div>
+    </section>
+
+    <!-- Consensus Voting -->
+    <section class="doc-section" id="voting">
+      <h2>Example: Consensus Voting</h2>
+      <p>Run multiple reasoning paths in parallel, select the best by latent certainty — no intermediate decoding.</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>python &middot; examples/complex.py</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="kw">from</span> latentmesh <span class="kw">import</span> (
+    LatentLLM, ReasonPrimitive, VotingPrimitive,
+    LatentGraphState, decode_state,
+)
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+
+llm = LatentLLM(<span class="str">"HuggingFaceTB/SmolLM-135M"</span>, device=<span class="str">"cpu"</span>)
+
+candidates = [
+    ReasonPrimitive(llm, trigger_text=<span class="str">"Analytical approach: "</span>, num_thinking_steps=<span class="num">24</span>),
+    ReasonPrimitive(llm, trigger_text=<span class="str">"Creative approach: "</span>,   num_thinking_steps=<span class="num">24</span>),
+    ReasonPrimitive(llm, trigger_text=<span class="str">"Step-by-step: "</span>,        num_thinking_steps=<span class="num">24</span>),
+]
+
+consensus = VotingPrimitive(<span class="str">"BestOfThree"</span>, candidates)
+
+builder = StateGraph(LatentGraphState)
+builder.add_node(<span class="str">"vote"</span>, consensus)
+builder.add_edge(START, <span class="str">"vote"</span>)
+builder.add_edge(<span class="str">"vote"</span>, END)
+
+graph = builder.compile()
+result = graph.invoke({<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Explain quantum entanglement."</span>}]})
+print(decode_state(llm, result, [{<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Answer: "</span>}]))</code></pre>
+      </div>
+    </section>
+
+    <!-- Hierarchical Routing -->
+    <section class="doc-section" id="hierarchical">
+      <h2>Example: Hierarchical Routing</h2>
+      <p>A supervisor agent makes routing decisions based on latent-state features — dynamic control flow without decoding.</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>python &middot; examples/hierarchical.py</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="cm"># Supervisor examines latent-state norm to route to specialists</span>
+<span class="kw">def</span> <span class="fn">route</span>(state):
+    latent = state[<span class="str">"latent"</span>]
+    norm = latent.hidden_states.norm(dim=-<span class="num">1</span>).mean().item()
+    <span class="kw">return</span> <span class="str">"deep_thinker"</span> <span class="kw">if</span> norm < threshold <span class="kw">else</span> <span class="str">"quick_solver"</span>
+
+builder.add_conditional_edges(<span class="str">"supervisor"</span>, route, {
+    <span class="str">"deep_thinker"</span>: <span class="str">"deep_thinker"</span>,
+    <span class="str">"quick_solver"</span>: <span class="str">"quick_solver"</span>,
+})</code></pre>
+      </div>
+    </section>
+
+    <!-- FastAPI Deployment -->
+    <section class="doc-section" id="deployment">
+      <h2>Example: FastAPI Deployment</h2>
+      <p>Serve a latent graph as an HTTP endpoint. The model loads once at startup; each request runs the graph and decodes.</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>python &middot; examples/deployment.py</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="kw">from</span> contextlib <span class="kw">import</span> asynccontextmanager
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">import</span> uvicorn
+
+<span class="dec">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">lifespan</span>(app):
+    app.state.llm = LatentLLM(<span class="str">"HuggingFaceTB/SmolLM-135M"</span>, device=<span class="str">"cpu"</span>)
+    app.state.graph = build_graph(app.state.llm)
+    <span class="kw">yield</span>
+
+app = FastAPI(lifespan=lifespan)
+
+<span class="dec">@app.post</span>(<span class="str">"/generate"</span>)
+<span class="kw">async def</span> <span class="fn">generate</span>(prompt: <span class="cls">str</span>):
+    result = app.state.graph.invoke({
+        <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}]
+    })
+    <span class="kw">return</span> {<span class="str">"response"</span>: decode_state(app.state.llm, result,
+        [{<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Answer: "</span>}])}</code></pre>
+      </div>
+    </section>
+
+    <hr class="section-divider">
+
+    <!-- Benchmarks -->
+    <section class="doc-section" id="benchmarks">
+      <h2>Benchmarks</h2>
+      <p>LatentMesh includes a benchmark harness comparing single-model, text-MAS, and latent-MAS across standardized datasets. Results below are placeholder; run benchmarks locally for production numbers.</p>
+
+      <!-- <h3>Modes</h3>
+      <table class="doc-table">
+        <thead><tr><th>Mode</th><th>Communication</th><th>Decode Points</th></tr></thead>
+        <tbody>
+          <tr><td><code>single_model</code></td><td>N/A</td><td>1 (direct)</td></tr>
+          <tr><td><code>text_mas</code></td><td>Text strings</td><td>4 (every agent)</td></tr>
+          <tr><td><code>latent_mas</code></td><td>KV caches</td><td>1 (final only)</td></tr>
+        </tbody>
+      </table> -->
+
+      <h3>GPQA (Graduate-Level QA)</h3>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Single Model</span><span>32.4%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill warn" data-target="32.4"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Text MAS</span><span>38.1%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill" data-target="38.1"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Latent MAS (LatentMesh)</span><span>41.7%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill alt" data-target="41.7"></div></div>
+      </div>
+
+      <h3>AIME 2025 (Math Competition)</h3>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Single Model</span><span>12.0%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill warn" data-target="12.0"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Text MAS</span><span>16.5%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill" data-target="16.5"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Latent MAS (LatentMesh)</span><span>20.3%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill alt" data-target="20.3"></div></div>
+      </div>
+
+      <h3>LiveCodeBench</h3>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Single Model</span><span>18.7%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill warn" data-target="18.7"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Text MAS</span><span>22.4%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill" data-target="22.4"></div></div>
+      </div>
+      <div class="benchmark-bar-container">
+        <div class="benchmark-label"><span>Latent MAS (LatentMesh)</span><span>25.1%</span></div>
+        <div class="benchmark-track"><div class="benchmark-fill alt" data-target="25.1"></div></div>
+      </div>
+
+      <div class="callout warning">
+        <strong>Placeholder results.</strong> Run <code>uv run python -m benchmarks.run --config benchmarks/configs/gpqa_latent_mas.yaml</code> for production numbers.
+      </div>
+
+      <h3>Running Benchmarks</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><code><span class="cm"># Single dataset, single mode</span>
+uv run python -m benchmarks.run \
+  --config benchmarks/configs/gpqa_latent_mas.yaml \
+  --datasets gpqa --modes latent_mas --max-samples 10
+
+<span class="cm"># Multi-GPU with accelerate</span>
+uv run accelerate launch --num_processes=4 -m benchmarks.run \
+  --config benchmarks/configs/gpqa_single.yaml \
+  --datasets gpqa --modes single_model</code></pre>
+      </div>
+    </section>
+
+    <!-- References -->
+    <section class="doc-section" id="references">
+      <h2>References</h2>
+      <ul>
+        <li><a href="https://arxiv.org/abs/2511.20639" target="_blank">LatentMAS: Latent Collaboration in Multi-Agent Systems</a></li>
+        <li><a href="https://arxiv.org/abs/2601.06123" target="_blank">Latent Space Communication via K-V Cache Alignment</a></li>
+        <li><a href="https://arxiv.org/abs/2602.03695" target="_blank">Agent Primitives: Reusable Latent Building Blocks for MAS</a></li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- Right TOC -->
+  <aside class="toc-panel" id="toc-panel">
+    <div class="toc-title">On this page</div>
+    <button class="toc-link active" data-section="introduction">Introduction</button>
+    <button class="toc-link" data-section="installation">Installation</button>
+    <button class="toc-link" data-section="quick-start">Quick Start</button>
+    <button class="toc-link" data-section="latentllm">LatentLLM</button>
+    <button class="toc-link" data-section="decode-state">decode_state</button>
+    <button class="toc-link" data-section="primitives">Primitives</button>
+    <button class="toc-link" data-section="graph-state">Graph State</button>
+    <button class="toc-link" data-section="sequential">Sequential Pipeline</button>
+    <button class="toc-link" data-section="voting">Consensus Voting</button>
+    <button class="toc-link" data-section="hierarchical">Hierarchical Routing</button>
+    <button class="toc-link" data-section="deployment">FastAPI Deployment</button>
+    <button class="toc-link" data-section="benchmarks">Benchmarks</button>
+    <button class="toc-link" data-section="references">References</button>
+  </aside>
+
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
