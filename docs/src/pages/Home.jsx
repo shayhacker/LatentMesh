@@ -250,7 +250,7 @@ export default function Home() {
                                     background: 'var(--c-tint)', color: '#fff',
                                     padding: '2px 8px', borderRadius: 20,
                                     fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.04em',
-                                }}>v0.5.0</span>
+                                }}>v0.5.2</span>
                                 Now available
                             </span>
                         </motion.div>

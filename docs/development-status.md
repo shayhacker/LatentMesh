@@ -1,6 +1,6 @@
 # Development Status
 
-Current project version: **v0.5.0**
+Current project version: **v0.5.2**
 
 ---
 
