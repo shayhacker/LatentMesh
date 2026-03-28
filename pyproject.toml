@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "latentmesh"
 version = "0.5.0"
-description = "LangGraph-based multi-agent KV-cache communication protocol for LLMs"
+description = "Multi-agent Latent Space Communication for LLMs"
 readme = "README.md"
 requires-python = ">=3.9"
 
