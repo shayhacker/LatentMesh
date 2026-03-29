@@ -124,21 +124,37 @@ class GlobalPrefixCache:
 
     def query(self, text: str) -> Tuple[Optional[str], Optional[bytes]]:
         """
-        Find the longest stored text that is a prefix of ``text``.
-
-        Returns:
-            ``(matched_prefix_text, kv_bytes)`` or ``(None, None)`` if no match.
+        Find the longest shared character sequence between ``text`` and ANY cached string,
+        then return that cached string and its KV tuples so we can slice out the matching prefix.
+        
+        We iterate down the character trie. If the text diverges from the cache (e.g., due to 
+        chat template differences like `<think>` tags being stripped), we just grab ANY leaf 
+        under the divergence point to recycle the common prefix.
         """
-        result = self._trie.longest_prefix(text)
-
-        if result.key is None:
+        # We can just iterate through all keys in the cache to find the longest common prefix.
+        # Since the cache size (number of steps) is small in LatentMesh, O(N) is perfectly acceptable.
+        best_lcp_len = 0
+        best_key = None
+        best_cached_text = None
+        
+        for cached_text, storage_key in self._trie.items():
+            # Find common prefix length
+            lcp = 0
+            for c1, c2 in zip(text, cached_text):
+                if c1 == c2:
+                    lcp += 1
+                else:
+                    break
+            
+            if lcp > best_lcp_len:
+                best_lcp_len = lcp
+                best_cached_text = cached_text
+                best_key = storage_key
+        
+        if best_key is None:
             return None, None
-
-        storage_key = result.value
-        matched_text = result.key
-
+            
         try:
-            return matched_text, self.store.load(storage_key)
+            return best_cached_text, self.store.load(best_key)
         except KeyError:
-            # Underlying store evicted the entry
             return None, None

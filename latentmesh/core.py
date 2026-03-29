@@ -102,7 +102,7 @@ class LatentLLM:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=self.model_dtype,
+            dtype=self.model_dtype,
             device_map="auto" if self.device == "cuda" else None,
         )
         self.model.eval()
@@ -193,28 +193,54 @@ class LatentLLM:
         # 2. GlobalPrefixCache lookup — longest prefix match
         if self.global_cache:
             best_match_text, cached_bytes = self.global_cache.query(full_text)
+            if self.debug:
+                print(f"[LatentLLM] Queried cache with full_text (len {len(full_text)}). Match length: {len(best_match_text) if best_match_text else 0}")
+            
             if best_match_text and cached_bytes:
                 prefix_ids = self.tokenizer(
                     best_match_text, return_tensors="pt", add_special_tokens=False,
-                ).input_ids
-                matched_tokens = prefix_ids.shape[1]
+                ).input_ids.to(self.device)
+                # Verify tokenization alignment token-by-token to find the true valid prefix
+                prefix_seq = prefix_ids[0].tolist()
+                full_seq = full_input_ids[0].tolist()
 
-                # Verify tokenization alignment
-                if (
-                    matched_tokens <= full_input_ids.shape[1]
-                    and torch.equal(prefix_ids[0], full_input_ids[0, :matched_tokens])
-                ):
+                matched_tokens = 0
+                for p_tok, f_tok in zip(prefix_seq, full_seq):
+                    if p_tok == f_tok:
+                        matched_tokens += 1
+                    else:
+                        break
+
+                if matched_tokens > 0:
                     past_key_values = self._prepare_past_kv(cached_bytes)
-                    if self.debug:
-                        logger.info(
-                            f"[LatentLLM] Cache HIT — reusing {matched_tokens} tokens, "
-                            f"encoding {total_input_tokens - matched_tokens} new tokens"
-                        )
+                    if past_key_values is not None:
+                        # Slice the KV cache dynamically based on matched_tokens.
+                        if hasattr(past_key_values, "crop"):
+                            # This safely shrinks the tensors and correctly resets _seen_tokens
+                            past_key_values.crop(matched_tokens)
+                        else:
+                            # Fallback manual tuple slicing if using raw lists
+                            if hasattr(past_key_values, "key_cache"):
+                                for i in range(len(past_key_values.key_cache)):
+                                    past_key_values.key_cache[i] = past_key_values.key_cache[i][:, :, :matched_tokens, :]
+                                    past_key_values.value_cache[i] = past_key_values.value_cache[i][:, :, :matched_tokens, :]
+                                if hasattr(past_key_values, "_seen_tokens"):
+                                    past_key_values._seen_tokens = matched_tokens
+                            elif isinstance(past_key_values, list):
+                                for i in range(len(past_key_values)):
+                                    k, v = past_key_values[i]
+                                    past_key_values[i] = (k[:, :, :matched_tokens, :], v[:, :, :matched_tokens, :])
+                            
+                        if self.debug:
+                            print(f"[LatentLLM] Cache HIT — reusing {matched_tokens} tokens, encoding {total_input_tokens - matched_tokens} new tokens")
+                    else:
+                        matched_tokens = 0
+                        if self.debug:
+                            print("[LatentLLM] Cache prefix found but could not load KV tuples — full re-encode")
                 else:
-                    matched_tokens = 0
                     past_key_values = None
                     if self.debug:
-                        logger.warning("[LatentLLM] Cache prefix found but tokenisation misaligned — full re-encode")
+                        print(f"[LatentLLM] Cache prefix found but tokenisation completely diverged! First prefix tok: {prefix_seq[0]}, first full tok: {full_seq[0]}")
 
         # 3. Only encode the delta (tokens not covered by the cache)
         input_ids = full_input_ids[:, matched_tokens:]
@@ -224,16 +250,12 @@ class LatentLLM:
         current_length = input_ids.shape[1]
 
         attention_mask = torch.ones((1, past_length + current_length), device=self.device)
-        cache_position = torch.arange(
-            past_length, past_length + current_length, device=self.device,
-        )
 
         # 4. Generation
         outputs = self.model.generate(
             input_ids=input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            cache_position=cache_position,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_k=top_k,
